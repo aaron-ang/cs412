@@ -1,0 +1,25 @@
+- var title = "CS412 MEAN PS4";
+- var message = "External Data in Node"
+
+html
+    head
+        title= title
+    body
+        h1= message
+        h2= "Promise"
+        form(method="POST" action="/ps4/weather/a")
+            p Location: 
+                input(type='text', name='location')
+            input(type="submit", value="Get Weather")
+
+        h2= "Async/Await"
+        form(method="POST" action="/ps4/weather/b")
+            p Location: 
+                input(type='text', name='location')
+            input(type="submit", value="Get Weather")
+
+        h2= "Callback"
+        form(method="POST" action="/ps4/weather/c")
+            p Location: 
+                input(type='text', name='location')
+            input(type="submit", value="Get Weather")
