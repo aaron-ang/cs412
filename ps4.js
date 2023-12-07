@@ -7,7 +7,7 @@ import { createClient } from "redis";
 dotenv.config();
 const WEATHER_API_KEY = process.env.WEATHERSTACK_API_KEY;
 const ROUTE = "/ps4";
-const TTL = 60 * 60; // 1 hour
+const TTL = 15; // 15 seconds
 
 const router = express.Router();
 const client = await createClient()
@@ -41,7 +41,7 @@ router.post("/weather/:type", async (req, res) => {
   const renderData = await client.get(location);
   if (renderData) {
     console.log("Cache hit");
-    res.render("results", JSON.parse(renderData));
+    res.render("results", { ...JSON.parse(renderData), cache: true });
     return;
   }
 
@@ -70,7 +70,7 @@ router.post("/weather/:type", async (req, res) => {
             location: data.location.name,
             ...data.current,
           };
-          await client.set(location, JSON.stringify(renderData), "EX", TTL);
+          await client.setEx(location, TTL, JSON.stringify(renderData));
           res.render("results", renderData);
         })
         .catch((error) => {
@@ -90,7 +90,7 @@ router.post("/weather/:type", async (req, res) => {
             location: data.location.name,
             ...data.current,
           };
-          await client.set(location, JSON.stringify(renderData), "EX", TTL);
+          await client.setEx(location, TTL, JSON.stringify(renderData));
           res.render("results", renderData);
         }
       } catch (error) {
@@ -113,7 +113,7 @@ router.post("/weather/:type", async (req, res) => {
               location: data.location.name,
               ...data.current,
             };
-            await client.set(location, JSON.stringify(renderData), "EX", TTL);
+            await client.setEx(location, TTL, JSON.stringify(renderData));
             res.render("results", renderData);
           }
         }

@@ -1,6 +1,9 @@
 html
     body
-        h1= "Results"
+        if cache
+            h1= "Cached Results"
+        else
+            h1= "Results"
         p Location: #{location}
         p Temperature: #{temperature}
         p Feels Like: #{feelslike}
