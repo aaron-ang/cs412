@@ -2,11 +2,17 @@ import express from "express";
 import request from "request";
 import fetch from "node-fetch"; // node-fetch supports import syntax only
 import dotenv from "dotenv";
+import { createClient } from "redis";
+
+dotenv.config();
+const WEATHER_API_KEY = process.env.WEATHERSTACK_API_KEY;
+const ROUTE = "/ps4";
+const TTL = 60 * 60; // 1 hour
 
 const router = express.Router();
-dotenv.config();
-const weather_api_key = process.env.WEATHERSTACK_API_KEY;
-const route = "/ps4";
+const client = await createClient()
+  .on("error", (err) => console.log("Redis Client Error", err))
+  .connect();
 
 router.use(
   express.urlencoded({
@@ -27,12 +33,20 @@ router.get("/", (req, res) => {
 
 router.post("/weather/:type", async (req, res) => {
   if (!req.body) {
-    res.redirect(route);
+    res.redirect(ROUTE);
     return;
   }
 
   const { location } = req.body;
-  const url = `http://api.weatherstack.com/current?access_key=${weather_api_key}&query=${location}`;
+  const renderData = await client.get(location);
+  if (renderData) {
+    console.log("Cache hit");
+    res.render("results", JSON.parse(renderData));
+    return;
+  }
+
+  console.log("Cache miss");
+  const url = `http://api.weatherstack.com/current?access_key=${WEATHER_API_KEY}&query=${location}`;
 
   switch (req.params.type) {
     case "a": // Promise
@@ -51,12 +65,17 @@ router.post("/weather/:type", async (req, res) => {
         });
       });
       promise
-        .then((data) => {
-          const location = data.location.name;
-          res.render("results", { location, ...data.current });
+        .then(async (data) => {
+          const renderData = {
+            location: data.location.name,
+            ...data.current,
+          };
+          await client.set(location, JSON.stringify(renderData), "EX", TTL);
+          res.render("results", renderData);
         })
         .catch((error) => {
-          res.redirect(route);
+          console.log(error);
+          res.redirect(ROUTE);
         });
       break;
 
@@ -65,33 +84,43 @@ router.post("/weather/:type", async (req, res) => {
         const response = await fetch(url);
         const data = await response.json();
         if (data.error) {
-          res.redirect(route);
+          res.redirect(ROUTE);
         } else {
-          const location = data.location.name;
-          res.render("results", { location, ...data.current });
+          const renderData = {
+            location: data.location.name,
+            ...data.current,
+          };
+          await client.set(location, JSON.stringify(renderData), "EX", TTL);
+          res.render("results", renderData);
         }
       } catch (error) {
-        res.redirect(route);
+        console.log(error);
+        res.redirect(ROUTE);
       }
       break;
 
     case "c": // Callback
-      request(url, (error, response, body) => {
+      request(url, async (error, response, body) => {
         if (error) {
-          res.redirect(route);
+          res.redirect(ROUTE);
         } else {
           const data = JSON.parse(body);
           if (data.error) {
-            res.redirect(route);
+            console.log(data.error);
+            res.redirect(ROUTE);
           } else {
-            const location = data.location.name;
-            res.render("results", { location, ...data.current });
+            const renderData = {
+              location: data.location.name,
+              ...data.current,
+            };
+            await client.set(location, JSON.stringify(renderData), "EX", TTL);
+            res.render("results", renderData);
           }
         }
       });
       break;
     default:
-      res.redirect(route);
+      res.redirect(ROUTE);
   }
 });
 
