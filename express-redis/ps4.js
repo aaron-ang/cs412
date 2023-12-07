@@ -113,6 +113,7 @@ router.post("/weather/:type", async (req, res) => {
         }
       });
       break;
+
     default:
       res.redirect(ROUTE);
   }
