@@ -32,7 +32,7 @@ router.get("/", (req, res) => {
 });
 
 router.post("/weather/:type", async (req, res) => {
-  if (!req.body) {
+  if (!req.body || !req.body.location) {
     res.redirect(ROUTE);
     return;
   }
@@ -47,6 +47,15 @@ router.post("/weather/:type", async (req, res) => {
 
   console.log("Cache miss");
   const url = `http://api.weatherstack.com/current?access_key=${WEATHER_API_KEY}&query=${location}`;
+
+  const renderResults = async (data) => {
+    const renderData = {
+      location: data.location.name,
+      ...data.current,
+    };
+    await client.setEx(location, TTL, JSON.stringify(renderData));
+    res.render("results", renderData);
+  };
 
   switch (req.params.type) {
     case "a": // Promise
@@ -66,12 +75,7 @@ router.post("/weather/:type", async (req, res) => {
       });
       promise
         .then(async (data) => {
-          const renderData = {
-            location: data.location.name,
-            ...data.current,
-          };
-          await client.setEx(location, TTL, JSON.stringify(renderData));
-          res.render("results", renderData);
+          await renderResults(data);
         })
         .catch((error) => {
           console.log(error);
@@ -86,12 +90,7 @@ router.post("/weather/:type", async (req, res) => {
         if (data.error) {
           res.redirect(ROUTE);
         } else {
-          const renderData = {
-            location: data.location.name,
-            ...data.current,
-          };
-          await client.setEx(location, TTL, JSON.stringify(renderData));
-          res.render("results", renderData);
+          await renderResults(data);
         }
       } catch (error) {
         console.log(error);
@@ -102,19 +101,14 @@ router.post("/weather/:type", async (req, res) => {
     case "c": // Callback
       request(url, async (error, response, body) => {
         if (error) {
+          console.log(error);
           res.redirect(ROUTE);
         } else {
           const data = JSON.parse(body);
           if (data.error) {
-            console.log(data.error);
             res.redirect(ROUTE);
           } else {
-            const renderData = {
-              location: data.location.name,
-              ...data.current,
-            };
-            await client.setEx(location, TTL, JSON.stringify(renderData));
-            res.render("results", renderData);
+            await renderResults(data);
           }
         }
       });
