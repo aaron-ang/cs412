@@ -1,0 +1,4 @@
+<form [formGroup]="weatherFormGroup" (ngSubmit)="getWeatherByLocation()">
+  <input data-cy="location-input" formControlName="locationControl" />
+  <button data-cy="submit-button" type="submit">Submit</button>
+</form>

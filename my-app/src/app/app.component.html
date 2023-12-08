@@ -178,17 +178,8 @@
 </style>
 
 <main class="main">
-  <div class="content">
-    @if (data.length > 0) {
-      @for (res of data; track res.location.name) {
-        <p>{{ res.location.name }}</p>
-        <p>{{ res.current.temperature }} °C</p>
-      }
-      <button (click)="clearData()">Clear Data</button>
-    } @else {
-      <button (click)="getData()">Get Data</button>
-    }
-  </div>
+  <app-form></app-form>
+  <app-display></app-display>
 </main>
 
 <!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->

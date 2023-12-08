@@ -31,6 +31,15 @@ router.get("/", (req, res) => {
   res.render("index");
 });
 
+const duplicate = (data) => {
+  // Duplicate data for Angular service\
+  if (typeof data === "string") {
+    data = JSON.parse(data);
+  }
+  const jsonCopy = JSON.parse(JSON.stringify(data));
+  return [data, jsonCopy];
+};
+
 router.post("/weather/:type", async (req, res) => {
   if (!req.body || !req.body.location) {
     res.redirect(ROUTE);
@@ -38,10 +47,10 @@ router.post("/weather/:type", async (req, res) => {
   }
 
   const { location } = req.body;
-  const renderData = await client.get(location);
-  if (renderData) {
+  const cachedData = await client.get(location);
+  if (cachedData) {
     console.log("Cache hit");
-    res.render("results", { ...JSON.parse(renderData), cache: true });
+    res.json(JSON.parse(cachedData));
     return;
   }
 
@@ -108,7 +117,9 @@ router.post("/weather/:type", async (req, res) => {
           if (data.error) {
             res.redirect(ROUTE);
           } else {
-            await renderResults(data);
+            const duplicateData = duplicate(data);
+            await client.setEx(location, TTL, JSON.stringify(duplicateData));
+            res.json(duplicateData);
           }
         }
       });
