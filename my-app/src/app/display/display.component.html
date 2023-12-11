@@ -1,0 +1,7 @@
+@if (renderData && renderData.length > 0) {
+    @for (data of renderData; track data.location.name) {
+      <p>{{ data.location.name }}</p>
+      <p>{{ data.current.temperature }} °C</p>
+    }
+    <button (click)="clearData()">Clear Data</button>
+}

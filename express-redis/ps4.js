@@ -1,6 +1,7 @@
 import express from "express";
 import request from "request";
 import fetch from "node-fetch"; // node-fetch supports import syntax only
+import cors from "cors";
 import dotenv from "dotenv";
 import { createClient } from "redis";
 
@@ -19,6 +20,7 @@ router.use(
     extended: true,
   })
 );
+router.use(cors());
 
 // middleware that is specific to this router
 router.use((req, res, next) => {
@@ -41,6 +43,7 @@ const duplicate = (data) => {
 };
 
 router.post("/weather/:type", async (req, res) => {
+  console.log(req.body);
   if (!req.body || !req.body.location) {
     res.redirect(ROUTE);
     return;

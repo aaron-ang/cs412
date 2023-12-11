@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 
 import { DataService } from '../services/data.service';
 import { WxService } from '../services/weather.service';
@@ -7,15 +7,29 @@ import { WxService } from '../services/weather.service';
 @Component({
   selector: 'app-form',
   standalone: true,
-  imports: [CommonModule],
+  imports: [ReactiveFormsModule],
   templateUrl: './form.component.html',
+  styleUrl: './form.component.css',
 })
 export class FormComponent {
-  constructor(private WxService: WxService, private data: DataService) {}
+  location!: string;
 
-  getWeatherByLocation(location: string) {
-    this.WxService.getWeather(location).subscribe((data) => {
-      this.data.updateWeatherData(data);
+  constructor(
+    private WxService: WxService,
+    private data: DataService,
+    private form: FormBuilder
+  ) {}
+
+  weatherFormGroup = this.form.group({
+    locationControl: ['', [Validators.minLength(1), Validators.required]],
+  });
+
+  getWeatherByLocation() {
+    this.location = this.weatherFormGroup.get('locationControl')?.value || '';
+    this.weatherFormGroup.reset();
+
+    this.WxService.getWeather(this.location).subscribe((response) => {
+      this.data.updateWeatherData(response);
     });
   }
 }
