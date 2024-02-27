@@ -1,1 +1,3 @@
-Repo URL: https://github.com/aaron-ang/cs412
+Repo URL: https://github.com/aaron-ang/cs412/tree/ps8
+
+Used BehaviorSubject in RxJS to simplify sharing of data between child components.
